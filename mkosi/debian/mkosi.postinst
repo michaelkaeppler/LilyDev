@@ -38,9 +38,9 @@ EOF
 # guile-1.8 is not available on debian stable repository,
 # so we build and install it in /usr/local.
 # These lines can be removed when lilypond will support guile-2.
-
-git clone -b branch_release-1-8 --single-branch https://git.savannah.gnu.org/git/guile.git guile-1.8
-cd guile-1.8
+GUILE_BUILD_DIR=/home/dev/guile/guile-1.8
+git clone -b branch_release-1-8 --single-branch https://git.savannah.gnu.org/git/guile.git $GUILE_BUILD_DIR
+cd $GUILE_BUILD_DIR
 ./autogen.sh
 ./configure --disable-error-on-warning --prefix=/usr/local
 make
