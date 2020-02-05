@@ -35,7 +35,8 @@ RUN useradd -m -s /bin/bash user \
 
 USER user
 COPY ./install/base_bashrc_addendum /home/user/base_bashrc_addendum
-RUN cat ~/base_bashrc_addendum >> ~/.bashrc && rm ~/base_bashrc_addendum
+RUN cat ~/base_bashrc_addendum >> ~/.bashrc && rm ~/base_bashrc_addendum \
+&& mkdir ~/lilypond-build
 
 ###########################################################################
 # lilypond: for running LilyPond
@@ -66,6 +67,14 @@ FROM lilypond-base as lilypond-dev
 
 ## YUCK: Testing, e.g. make test-baseline, uses git.
 ##
+## Packages that are for debugging and profiling rather than building
+## and testing:
+##
+##   * gdb
+##   * less
+##   * moreutils (ts, errno, etc.)
+##   * strace
+##
 USER root
 RUN apt-get update \
 && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -y \
@@ -82,6 +91,7 @@ RUN apt-get update \
     fonts-ipafont-gothic \
     fonts-ipafont-mincho \
     g++ \
+    gdb \
     gettext \
     git \
     groff \
@@ -90,6 +100,7 @@ RUN apt-get update \
     guile-1.8-dev \
     help2man \
     imagemagick \
+    less \
     libfl-dev \
     libfontconfig1-dev \
     libfreetype6-dev \
@@ -100,11 +111,12 @@ RUN apt-get update \
     m4 \
     make \
     mftrace \
+    moreutils \
     netpbm \
     pkg-config \
-    python-all-dev \
     quilt \
     rsync \
+    strace \
     texi2html \
     texinfo \
     texlive-fonts-recommended \
@@ -121,3 +133,19 @@ RUN apt-get update \
 USER user
 COPY ./install/urw35fonts.sh /home/user
 RUN bash ~/urw35fonts.sh && rm ~/urw35fonts.sh
+
+# Support sharing the build directory with Samba.  If you don't need
+# this, you can reduce the image size slightly by commenting it out.
+# You'll also need to modify docker-compose.yaml so that it does not
+# try to start smbd.
+USER root
+RUN apt-get update \
+&& DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -y \
+    samba \
+&& rm -rf /var/lib/apt/lists/* \
+&& echo "[lilypond-build]" >> /etc/samba/smb.conf \
+&& echo "   path = /home/user/lilypond-build" >> /etc/samba/smb.conf \
+&& echo "   read only = yes" >> /etc/samba/smb.conf \
+&& echo "   guest ok = yes" >> /etc/samba/smb.conf
+
+USER user

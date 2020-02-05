@@ -1,7 +1,18 @@
+Version 3
+---------
+
+Released: ?
+
+Changes:
+
+- Remove blank root password and lock the root account in the
+  containers (and in Debian virtual machine, where it was
+  accidentally unlocked).
+
 Version 2
 ---------
 
-Released:
+Released: 2020-01-28
 
 Changes:
 

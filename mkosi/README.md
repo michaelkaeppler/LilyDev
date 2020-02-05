@@ -35,7 +35,8 @@ dynamically resize the host window.
 If your host is running Linux, you can use QEMU.  It works well with either
 the raw image or its own format (qcow2), which you can generate it with:
 
-    qemu-img convert -f raw -O qcow2 LilyDev-VERSION-debian-vm.img LilyDev-VERSION-debian-vm.qcow2
+    qemu-img convert -f raw -O qcow2 \
+    LilyDev-VERSION-debian-vm.img LilyDev-VERSION-debian-vm.qcow2
 
 Raw images give optimal performance, but only basic features are available
 (for example, no snapshots). qcow2 is the QEMU image format and has a number of
@@ -49,7 +50,11 @@ Move the image to the usual location for libvirt images:
 Now you can *register* the virtual machine in libvirt or, in libvirt terms,
 *define a domain*:
 
-    virt-install --name LilyDev-VERSION-debian-vm --memory 1024 --os-type=linux --os-variant=debian9 --boot loader=/usr/share/edk2/ovmf/OVMF_CODE.fd --network=default --disk ~/.local/share/libvirt/images/LilyDev-VERSION-debian-vm.qcow2 --noautoconsole --import
+    virt-install --name LilyDev-VERSION-debian-vm \
+    --memory 1024 --os-type=linux --os-variant=debian9 \
+    --boot loader=/usr/share/edk2/ovmf/OVMF_CODE.fd --network=default \
+    --disk ~/.local/share/libvirt/images/LilyDev-VERSION-debian-vm.qcow2 \
+    --noautoconsole --import
 
 (available OS variants are listed by the command `osinfo-query os`)
 
@@ -99,25 +104,16 @@ Start the container:
 
     sudo systemd-nspawn -bD LilyDev-VERSION-DISTRO
 
-At the login type `root` and press Enter (no password needed).  Then change to
-the regular user `dev`, go to the home directory and run the setup.sh script:
+and log in as `dev` user (the password is `lilypond`).
+Launch the setup.sh script:
 
-    su dev
-    cd
-    ./setup.sh    # this should be run only the first time
+    ./setup.sh
 
 You are now ready to start contributing to LilyPond.
 
-When you've done, you can shutdown the machine with these commands:
+When you've done, you can shutdown the machine:
 
-    $ exit
-    # shutdown -h now
-
-(the first command will let you go back from dev user to root user,
-who has the privileges to shutdown the system)
-
-Remember that `dev` user can get root privileges with `sudo` (even if you
-should not need it). The password is `lilypond`.
+    sudo shutdown -h now
 
 There's a good chance that your user in the Linux host and the `dev` user
 in the container have the same uid (probably 1000, use the command `id`
