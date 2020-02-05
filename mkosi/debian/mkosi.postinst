@@ -1,9 +1,14 @@
 #!/bin/sh
-useradd -m -s /bin/bash dev
-usermod dev -a -G sudo
-echo 'dev:lilypond'|chpasswd
+LILYDEVUSER=dev
+LILYDEVPASSWORD=lilypond
+echo "Adding user '$LILYDEVUSER'..."
+useradd -m -s /bin/bash $LILYDEVUSER
+usermod $LILYDEVUSER -a -G sudo
+echo "Setting password of user '$LILYDEVUSER' to '$LILYDEVPASSWORD'"
+echo "dev:$LILYDEVPASSWORD"|chpasswd
 
-cat >> /home/dev/.bashrc <<EOF
+echo "Customize /home/$LILYDEVUSER/.bashrc..."
+cat >> /home/$LILYDEVUSER/.bashrc <<EOF
 ### LilyDev custom settings ###
 
 # This variable is needed to be able to access the X display in the host
@@ -38,8 +43,11 @@ EOF
 # guile-1.8 is not available on debian stable repository,
 # so we build and install it in /usr/local.
 # These lines can be removed when lilypond will support guile-2.
-git clone -b branch_release-1-8 --single-branch https://git.savannah.gnu.org/git/guile.git /home/dev/guile/guile-1.8
-cd /home/dev/guile/guile-1.8
+GUILE_REPO_URL=https://git.savannah.gnu.org/git/guile.git
+GUILE_BUILD_DIR=/home/$LILYDEVUSER/guile/guile-1.8
+echo "Download guile from $GUILE_REPO_URL..."
+git clone -b branch_release-1-8 --single-branch $GUILE_REPO_URL $GUILE_BUILD_DIR
+cd $GUILE_BUILD_DIR
 ./autogen.sh
 ./configure --disable-error-on-warning --prefix=/usr/local
 make
@@ -48,6 +56,7 @@ ldconfig
 
 
 # Enable i386 multiarch support (for GUB)
+echo "Add i386 multiarch support..."
 dpkg --add-architecture i386
 apt update
 apt install -y libc6:i386
@@ -56,9 +65,12 @@ apt install -y libc6:i386
 # might be useful also to install more recent software). It should be
 # safe, as packages from backports have low priority (100) and cannot be
 # installed accidentally.
-echo "deb http://ftp.debian.org/debian stretch-backports main contrib" >> /etc/apt/sources.list
+echo "Install VirtualBox guest additions..."
+echo "deb http://ftp.debian.org/debian stretch-backports main contrib" \
+	>> /etc/apt/sources.list
 apt update
-DEBIAN_FRONTEND=noninteractive apt -t stretch-backports install -y virtualbox-guest-dkms virtualbox-guest-utils virtualbox-guest-x11
+DEBIAN_FRONTEND=noninteractive apt -t stretch-backports install -y \
+	virtualbox-guest-dkms virtualbox-guest-utils virtualbox-guest-x11
 
 # Group membership in 'vboxsf' allow accessing VirtualBox 'shared folders'
 usermod -aG vboxsf dev
