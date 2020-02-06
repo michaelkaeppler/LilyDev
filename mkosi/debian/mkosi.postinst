@@ -1,10 +1,13 @@
 #!/bin/sh
 LILYDEVUSER=dev
 LILYDEVPASSWORD=lilypond
+echo "Adding user '$LILYDEVUSER'..."
 useradd -m -s /bin/bash $LILYDEVUSER
 usermod $LILYDEVUSER -a -G sudo
+echo "Setting password of user '$LILYDEVUSER' to '$LILYDEVPASSWORD'"
 echo '$LILYDEVUSER:$LILYDEVPASSWORD'|chpasswd
 
+echo "Customize /home/$LILYDEVUSER/.bashrc..."
 cat >> /home/$LILYDEVUSER/.bashrc <<EOF
 ### LilyDev custom settings ###
 
@@ -45,14 +48,17 @@ GUILE_BUILD_DIR=/home/$LILYDEVUSER/guile/guile-1.8
 echo "Download guile from $GUILE_REPO_URL..."
 git clone -b branch_release-1-8 --single-branch $GUILE_REPO_URL $GUILE_BUILD_DIR
 cd $GUILE_BUILD_DIR
+echo "Build guile from source..."
 ./autogen.sh
 ./configure --disable-error-on-warning --prefix=/usr/local
 make
+echo "Install guile..."
 make install
 ldconfig
 
 
 # Enable i386 multiarch support (for GUB)
+echo "Add i386 multiarch support..."
 dpkg --add-architecture i386
 apt update
 apt install -y libc6:i386
@@ -61,6 +67,7 @@ apt install -y libc6:i386
 # might be useful also to install more recent software). It should be
 # safe, as packages from backports have low priority (100) and cannot be
 # installed accidentally.
+echo "Install VirtualBox guest additions..."
 echo "deb http://ftp.debian.org/debian stretch-backports main contrib" >> /etc/apt/sources.list
 apt update
 DEBIAN_FRONTEND=noninteractive apt -t stretch-backports install -y virtualbox-guest-dkms virtualbox-guest-utils virtualbox-guest-x11
@@ -74,11 +81,13 @@ usermod -aG vboxsf $LILYDEVUSER
 PYTHON_URL=https://www.python.org/ftp/python/3.6.9/Python-3.6.9.tgz
 PYTHON_BASENAME=$(basename $PYTHON_URL)
 cd /home/$LILYDEVUSER
+echo "Download Python sources from $PYTHON_URL..."
 wget $PYTHON_URL
 mkdir python
 ## Extracting archive, stripping base dir Python-x.y.z
 tar xf $PYTHON_BASENAME --strip 1 -C python
 rm $PYTHON_BASENAME
+echo "Compile Python..."
 cd python
 # compiling with --enable-optimizations creates a faster interpreter,
 # but needs plenty of time during compiling due to test runs
@@ -86,6 +95,7 @@ cd python
 make
 # make altinstall is recommended to leave the system's old python3
 # intact, see: https://docs.python.org/3/using/unix.html#building-python
+echo "Install Python..."
 make altinstall
 # remove build directory afterwards
 rm -r /home/$LILYDEVUSER/python
@@ -93,8 +103,10 @@ rm -r /home/$LILYDEVUSER/python
 # Download mkosi v5 from systemd/mkosi repo and install it
 MKOSI_REPO_URL=git://github.com/systemd/mkosi.git
 cd /home/$LILYDEVUSER
+echo "Download mkosi sources from $MKOSI_REPO_URL..."
 git clone -b v5 --single-branch --depth 1 $MKOSI_REPO_URL mkosi
 cd mkosi
+echo "Install mkosi..."
 /usr/local/bin/python3.6 setup.py install
 # remove sources
 rm -r /home/$LILYDEVUSER/mkosi
