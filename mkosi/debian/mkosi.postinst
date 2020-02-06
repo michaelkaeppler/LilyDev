@@ -1,9 +1,11 @@
 #!/bin/sh
-useradd -m -s /bin/bash dev
-usermod dev -a -G sudo
-echo 'dev:lilypond'|chpasswd
+LILYDEVUSER=dev
+LILYDEVPASSWORD=lilypond
+useradd -m -s /bin/bash $LILYDEVUSER
+usermod $LILYDEVUSER -a -G sudo
+echo '$LILYDEVUSER:$LILYDEVPASSWORD'|chpasswd
 
-cat >> /home/dev/.bashrc <<EOF
+cat >> /home/$LILYDEVUSER/.bashrc <<EOF
 ### LilyDev custom settings ###
 
 # This variable is needed to be able to access the X display in the host
@@ -38,9 +40,11 @@ EOF
 # guile-1.8 is not available on debian stable repository,
 # so we build and install it in /usr/local.
 # These lines can be removed when lilypond will support guile-2.
-
-git clone -b branch_release-1-8 --single-branch https://git.savannah.gnu.org/git/guile.git /home/dev/guile/guile-1.8
-cd /home/dev/guile/guile-1.8
+GUILE_REPO_URL=https://git.savannah.gnu.org/git/guile.git
+GUILE_BUILD_DIR=/home/$LILYDEVUSER/guile/guile-1.8
+echo "Download guile from $GUILE_REPO_URL..."
+git clone -b branch_release-1-8 --single-branch $GUILE_REPO_URL $GUILE_BUILD_DIR
+cd $GUILE_BUILD_DIR
 ./autogen.sh
 ./configure --disable-error-on-warning --prefix=/usr/local
 make
@@ -62,16 +66,20 @@ apt update
 DEBIAN_FRONTEND=noninteractive apt -t stretch-backports install -y virtualbox-guest-dkms virtualbox-guest-utils virtualbox-guest-x11
 
 # Group membership in 'vboxsf' allow accessing VirtualBox 'shared folders'
-usermod -aG vboxsf dev
+usermod -aG vboxsf $LILYDEVUSER
 
 # We need Python 3.6 in order to run a current mkosi version
 # Python 3.6 is not available for Debian stretch, safest approach
 # is to compile it from source
-cd /home/dev
-wget https://www.python.org/ftp/python/3.6.9/Python-3.6.9.tgz
-tar xf Python-3.6.9.tgz
-rm Python-3.6.9.tgz
-cd Python-3.6.9
+PYTHON_URL=https://www.python.org/ftp/python/3.6.9/Python-3.6.9.tgz
+PYTHON_BASENAME=$(basename $PYTHON_URL)
+cd /home/$LILYDEVUSER
+wget $PYTHON_URL
+mkdir python
+## Extracting archive, stripping base dir Python-x.y.z
+tar xf $PYTHON_BASENAME --strip 1 -C python
+rm $PYTHON_BASENAME
+cd python
 # compiling with --enable-optimizations creates a faster interpreter,
 # but needs plenty of time during compiling due to test runs
 ./configure
@@ -80,12 +88,13 @@ make
 # intact, see: https://docs.python.org/3/using/unix.html#building-python
 make altinstall
 # remove build directory afterwards
-rm -r /home/dev/Python-3.6.9
+rm -r /home/$LILYDEVUSER/python
 
 # Download mkosi v5 from systemd/mkosi repo and install it
-cd /home/dev
-git clone -b v5 --single-branch --depth 1 git://github.com/systemd/mkosi.git
+MKOSI_REPO_URL=git://github.com/systemd/mkosi.git
+cd /home/$LILYDEVUSER
+git clone -b v5 --single-branch --depth 1 $MKOSI_REPO_URL mkosi
 cd mkosi
 /usr/local/bin/python3.6 setup.py install
 # remove sources
-rm -r /home/dev/mkosi
+rm -r /home/$LILYDEVUSER/mkosi
